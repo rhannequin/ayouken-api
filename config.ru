@@ -1,2 +1,2 @@
-require './app'
+require './ayouken'
 run Ayouken
