@@ -1,0 +1,5 @@
+twitter_api:
+  twitter_consumer_key: xxx
+  twitter_consumer_secret: xxx
+  twitter_oauth_token: xxx
+  twitter_oauth_token_secret: xxx
