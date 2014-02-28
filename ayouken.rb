@@ -8,7 +8,7 @@ require 'twitter'
 
 require_relative 'ayouken_helpers'
 
-def read_config
+def init_twitter
   twitter_api = YAML.load_file( File.dirname(__FILE__) + '/../config.yml' )
   Twitter.configure do |config|
     config.consumer_key       = twitter_api["twitter_api"]["twitter_consumer_key"]
@@ -17,22 +17,16 @@ def read_config
     config.oauth_token_secret = twitter_api["twitter_api"]["twitter_oauth_token_secret"]
   end
 end
-read_config
 
 class Twitter
   def get_first_tweet(hashtag)
     res = Twitter.search("##{hashtag} -rt")
     text = res.results.map{ |t| ['@' + t.from_user, t.text].join(' ➤ ') }.first
 
-    tiny_url = ''
-    long_url = ''
+    tiny_url = res.results.first.urls.last.url
+    long_url = res.results.first.urls.last.expanded_url
 
-    res.results.first.urls.map do |u|
-      tiny_url = u.url
-      long_url = u.expanded_url
-    end
-
-    { tweet: text.gsub(/#{tiny_url}/, long_url) }
+    text.gsub(/#{tiny_url}/, long_url)
   end
 end
 
@@ -72,6 +66,7 @@ class Ayouken < Sinatra::Base
   configure do
     enable :logging
     enable :cross_origin
+    init_twitter
   end
 
   configure :development, :test do
@@ -117,7 +112,7 @@ class Ayouken < Sinatra::Base
   end
 
   get '/hashtag/:hashtag' do
-    Twitter.get_first_tweet(params['hashtag'])
+    json_status 200, Twitter.get_first_tweet(params['hashtag'])
   end
 
 
