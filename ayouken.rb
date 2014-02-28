@@ -9,9 +9,8 @@ require_relative 'ayouken_helpers'
 
 module Scraping
   def scrap(uri)
-    Nokogiri::HTML(open(uri
-                        # ,proxy_http_basic_authentication:
-                        #     [proxy_host, proxy_user, proxy_password]
+    Nokogiri::HTML(open(uri #, proxy_http_basic_authentication:
+                            #  [proxy_host, proxy_user, proxy_password]
                         ))
   end
 end
@@ -78,11 +77,16 @@ class Ayouken < Sinatra::Base
     json_status 200, Gif.new.get_one
   end
 
+  get '/greet/:user' do
+    json_status 200, "Hello #{params[:user]}"
+  end
+
   get '/help' do
     list = [
-      { command: 'roulette', description: '1 chance out of 6 to die' },
       { command: 'gif', description: 'Get random gif from top reddit /r/gifs' },
-      { command: 'help', description: 'List of bot\'s commands' }
+      { command: 'greet [username]', description: 'Greet someone' },
+      { command: 'help', description: 'List of bot\'s commands' },
+      { command: 'roulette', description: '1 chance out of 6 to die' }
     ]
     json_status 200, list
   end
