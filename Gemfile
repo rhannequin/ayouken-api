@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-ruby '2.0.0'
+ruby '2.1.0'
 
 gem 'sinatra'
 gem 'sinatra-contrib'
@@ -11,3 +11,6 @@ gem 'nokogiri'
 gem 'unicorn'
 
 gem 'json'
+
+gem 'twitter', '~> 4.8'
+gem 'cinch'
