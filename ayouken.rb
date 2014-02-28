@@ -5,28 +5,17 @@ require 'json'
 require 'nokogiri'
 require 'open-uri'
 require 'twitter'
+require 'yaml'
 
 require_relative 'ayouken_helpers'
 
 def init_twitter
-  twitter_api = YAML.load_file( File.dirname(__FILE__) + '/../config.yml' )
+  twitter_api = YAML.load_file( 'config.yml' )
   Twitter.configure do |config|
     config.consumer_key       = twitter_api["twitter_api"]["twitter_consumer_key"]
     config.consumer_secret    = twitter_api["twitter_api"]["twitter_consumer_secret"]
     config.oauth_token        = twitter_api["twitter_api"]["twitter_oauth_token"]
     config.oauth_token_secret = twitter_api["twitter_api"]["twitter_oauth_token_secret"]
-  end
-end
-
-class Twitter
-  def get_first_tweet(hashtag)
-    res = Twitter.search("##{hashtag} -rt")
-    text = res.results.map{ |t| ['@' + t.from_user, t.text].join(' ➤ ') }.first
-
-    tiny_url = res.results.first.urls.last.url
-    long_url = res.results.first.urls.last.expanded_url
-
-    text.gsub(/#{tiny_url}/, long_url)
   end
 end
 
@@ -38,6 +27,19 @@ module Scraping
                         ))
   end
 end
+
+class TwitterYolo
+  def get_first_tweet(hashtag)
+    res = Twitter.search("##{hashtag} -rt")
+    text = res.results.map{ |t| ['@' + t.from_user, t.text].join(' ➤ ') }.first
+
+    tiny_url = res.results.first.urls.last.url
+    long_url = res.results.first.urls.last.expanded_url
+
+    text.gsub(/#{tiny_url}/, long_url)
+  end
+end
+
 
 class Gif
   include Scraping
@@ -112,7 +114,7 @@ class Ayouken < Sinatra::Base
   end
 
   get '/hashtag/:hashtag' do
-    json_status 200, Twitter.get_first_tweet(params['hashtag'])
+    json_status 200, TwitterYolo.new.get_first_tweet(params['hashtag'])
   end
 
 
