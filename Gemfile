@@ -11,3 +11,5 @@ gem 'nokogiri'
 gem 'unicorn'
 
 gem 'json'
+
+gem 'twitter', '~> 4.8'
