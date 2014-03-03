@@ -30,10 +30,13 @@ end
 class TwitterYolo
   def get_first_tweet(hashtag)
     res = Twitter.search("##{hashtag} -rt")
-    text = res.results.map{ |t| ['@' + t.from_user, t.text].join(' ➤ ') }.first
+    res = res.results.first
 
-    tiny_url = res.results.first.urls.last.url
-    long_url = res.results.first.urls.last.expanded_url
+    text = "@" + res.from_user + " ➤ " + res.text
+
+    url = res.urls.last
+    tiny_url = (defined? url.url) ? url.url : ""
+    long_url = (defined? url.expanded_url) ? url.expanded_url : ""
 
     text.gsub(/#{tiny_url}/, long_url)
   end
