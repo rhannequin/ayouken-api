@@ -12,10 +12,10 @@ require_relative 'ayouken_helpers'
 def init_twitter
   twitter_api = YAML.load_file( 'config.yml' )
   Twitter.configure do |config|
-    config.consumer_key       = twitter_api["twitter_api"]["twitter_consumer_key"]
-    config.consumer_secret    = twitter_api["twitter_api"]["twitter_consumer_secret"]
-    config.oauth_token        = twitter_api["twitter_api"]["twitter_oauth_token"]
-    config.oauth_token_secret = twitter_api["twitter_api"]["twitter_oauth_token_secret"]
+    config.consumer_key       = twitter_api['twitter_api']['twitter_consumer_key']
+    config.consumer_secret    = twitter_api['twitter_api']['twitter_consumer_secret']
+    config.oauth_token        = twitter_api['twitter_api']['twitter_oauth_token']
+    config.oauth_token_secret = twitter_api['twitter_api']['twitter_oauth_token_secret']
   end
 end
 
@@ -28,17 +28,16 @@ module Scraping
 end
 
 class TwitterYolo
-  def get_first_tweet(hashtag)
-    res = Twitter.search("##{hashtag} -rt")
-    res = res.results.first
+  def self.get_first_tweet(hashtag)
+    res = Twitter.search("##{hashtag} -rt", count: 1).results.first
 
-    text = "@" + res.from_user + " ➤ " + res.text
+    text = "@#{res.from_user} ➤ #{res.text}"
 
     url = res.urls.last
-    tiny_url = (defined? url.url) ? url.url : ""
-    long_url = (defined? url.expanded_url) ? url.expanded_url : ""
+    tiny_url = (defined? url.url) ? url.url : ''
+    long_url = (defined? url.expanded_url) ? url.expanded_url : ''
 
-    text.gsub(/#{tiny_url}/, long_url)
+    text.gsub /#{tiny_url}/, long_url
   end
 end
 
@@ -110,6 +109,10 @@ class Ayouken < Sinatra::Base
     json_status 200, "Hello #{params[:user]}"
   end
 
+  get '/hashtag/:hashtag' do
+    json_status 200, TwitterYolo.get_first_tweet(params['hashtag'])
+  end
+
   get '/help' do
     list = [
       { command: 'gif', description: 'Get random gif from top reddit /r/gifs' },
@@ -118,10 +121,6 @@ class Ayouken < Sinatra::Base
       { command: 'roulette', description: '1 chance out of 6 to die' }
     ]
     json_status 200, list
-  end
-
-  get '/hashtag/:hashtag' do
-    json_status 200, TwitterYolo.new.get_first_tweet(params['hashtag'])
   end
 
 
