@@ -6,6 +6,7 @@ require 'nokogiri'
 require 'open-uri'
 require 'twitter'
 require 'yaml'
+require 'cgi'
 
 require_relative 'ayouken_helpers'
 
@@ -113,10 +114,15 @@ class Ayouken < Sinatra::Base
     json_status 200, TwitterYolo.get_first_tweet(params['hashtag'])
   end
 
+  get '/mdn/:search' do
+    json_status 200, "https://developer.mozilla.org/en/search?q=#{CGI.escape(params['search'])}"
+  end
+
   get '/help' do
     list = [
       { command: 'gif', description: 'Get random gif from top reddit /r/gifs' },
       { command: 'greet [username]', description: 'Greet someone' },
+      { command: 'mdn [query]', description: 'Search on Mozilla Developer Network' },
       { command: 'help', description: 'List of bot\'s commands' },
       { command: 'roulette', description: '1 chance out of 6 to die' }
     ]
