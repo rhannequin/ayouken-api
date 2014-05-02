@@ -28,6 +28,10 @@ module Scraping
   end
 end
 
+class Scrapable
+  include Scraping
+end
+
 class TwitterYolo
   def self.get_first_tweet(hashtag)
     res = Twitter.search("##{hashtag} -rt", count: 1).results.first
@@ -118,11 +122,26 @@ class Ayouken < Sinatra::Base
     json_status 200, "https://developer.mozilla.org/en/search?q=#{CGI.escape(params['search'])}"
   end
 
+  get '/google/:search' do
+    query = CGI.escape(params['search'].sub('%20', ' '))
+    url = "https://www.google.com/search?q=#{query}&ie=utf-8&oe=utf-8"
+    document = Scrapable.new.scrap(url)
+    res = document.css('li.g')
+    li = res.first.content.include?('Images for') ? res[1] : res.first
+    title = li.css('h3>a').first.content
+    link = li.css('.s .kv cite').first.content
+    unless link[0..3] == 'http'
+      link = "http://#{link}"
+    end
+    json_status 200, "#{title} #{link} ( #{url} )"
+  end
+
   get '/help' do
     list = [
       { command: 'gif', description: 'Get random gif from top reddit /r/gifs' },
       { command: 'greet [username]', description: 'Greet someone' },
       { command: 'mdn [query]', description: 'Search on Mozilla Developer Network' },
+      { command: 'google [query]', description: 'Get link to Google query' },
       { command: 'help', description: 'List of bot\'s commands' },
       { command: 'roulette', description: '1 chance out of 6 to die' }
     ]
