@@ -46,11 +46,11 @@ end
 class Gif
   include Scraping
   def initialize
-    @uri = 'http://www.reddit.com/r/gifs'
+    @uris = %w(http://www.reddit.com/r/gifs http://www.reddit.com/r/gifs/new http://www.reddit.com/r/gif/new)
   end
 
   def get_one
-    res = scrap(@uri).css 'a.title'
+    res = scrap(@uris.sample).css 'a.title'
     rand = Random.rand res.size
     link = res[rand]
     { title: link.content, link: link[:href] }
