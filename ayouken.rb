@@ -140,9 +140,10 @@ class Ayouken < Sinatra::Base
     list = [
       { command: 'gif', description: 'Get random gif from top reddit /r/gifs' },
       { command: 'greet [username]', description: 'Greet someone' },
-      { command: 'mdn [query]', description: 'Search on Mozilla Developer Network' },
       { command: 'google [query]', description: 'Get link to Google query' },
-      { command: 'help', description: 'List of bot\'s commands' },
+      { command: 'hashtag [hashtag]', description: 'First Twitter result of the hashtag' },
+      { command: 'help', description: "List of bot's commands" },
+      { command: 'mdn [query]', description: 'Search on Mozilla Developer Network' },
       { command: 'roulette', description: '1 chance out of 6 to die' }
     ]
     json_status 200, list
