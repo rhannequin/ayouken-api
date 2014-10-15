@@ -1,3 +1,9 @@
+proxy:
+  use: false
+  url: "http://proxy.yourdomain.com"
+  port: 80
+  user: "user"
+  password: "password"
 twitter_api:
   twitter_consumer_key: xxx
   twitter_consumer_secret: xxx

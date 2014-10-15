@@ -1,5 +1,6 @@
 require 'sinatra/base'
 require 'sinatra/reloader'
+require 'sinatra/config_file'
 require 'sinatra/cross_origin'
 require 'json'
 require 'nokogiri'
@@ -10,26 +11,34 @@ require 'cgi'
 
 require_relative 'ayouken_helpers'
 
-def init_twitter
-  twitter_api = YAML.load_file( 'config.yml' )
+def init_twitter(api)
   Twitter.configure do |config|
-    config.consumer_key       = twitter_api['twitter_api']['twitter_consumer_key']
-    config.consumer_secret    = twitter_api['twitter_api']['twitter_consumer_secret']
-    config.oauth_token        = twitter_api['twitter_api']['twitter_oauth_token']
-    config.oauth_token_secret = twitter_api['twitter_api']['twitter_oauth_token_secret']
+    config.consumer_key       = api['twitter_consumer_key']
+    config.consumer_secret    = api['twitter_consumer_secret']
+    config.oauth_token        = api['twitter_oauth_token']
+    config.oauth_token_secret = api['twitter_oauth_token_secret']
   end
 end
 
 module Scraping
   def scrap(uri)
-    Nokogiri::HTML(open(uri #, proxy_http_basic_authentication:
-                            #  [proxy_host, proxy_user, proxy_password]
-                        ))
+    proxy = @proxy_settings['use'] ? {
+      proxy_http_basic_authentication: [
+        "#{@proxy_settings['url']}:#{@proxy_settings['port']}",
+        @proxy_settings['user'],
+        @proxy_settings['password']
+      ]
+    } : {}
+    Nokogiri::HTML(open(uri, proxy))
   end
 end
 
 class Scrapable
   include Scraping
+
+  def initialize(proxy_settings)
+    @proxy_settings = proxy_settings
+  end
 end
 
 class TwitterYolo
@@ -49,7 +58,8 @@ end
 
 class Gif
   include Scraping
-  def initialize
+  def initialize(proxy_settings)
+    @proxy_settings = proxy_settings
     @uris = %w(http://www.reddit.com/r/gifs http://www.reddit.com/r/gifs/new http://www.reddit.com/r/gif/new)
   end
 
@@ -62,6 +72,7 @@ class Gif
 end
 
 class Ayouken < Sinatra::Base
+  register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
 
   set :root, File.dirname(__FILE__)
@@ -71,10 +82,14 @@ class Ayouken < Sinatra::Base
   set :allow_origin, :any
   set :expose_headers, ['Content-Type']
 
+  config_file 'config.yml'
+
   configure do
     enable :logging
     enable :cross_origin
-    init_twitter
+    init_twitter settings.twitter_api
+    set :scrapable, Scrapable.new(settings.proxy)
+    set :gif, Gif.new(settings.proxy)
   end
 
   configure :development, :test do
@@ -107,7 +122,7 @@ class Ayouken < Sinatra::Base
   end
 
   get '/gif' do
-    json_status 200, Gif.new.get_one
+    json_status 200, settings.gif.get_one
   end
 
   get '/greet/:user' do
@@ -125,7 +140,7 @@ class Ayouken < Sinatra::Base
   get '/google/:search' do
     query = CGI.escape(params['search'].sub('%20', ' '))
     url = "https://www.google.com/search?q=#{query}&ie=utf-8&oe=utf-8"
-    document = Scrapable.new.scrap(url)
+    document = settings.scrapable.scrap(url)
     res = document.css('li.g')
     li = res.first.content.include?('Images for') ? res[1] : res.first
     title = li.css('h3>a').first.content
@@ -140,10 +155,9 @@ class Ayouken < Sinatra::Base
     list = [
       { command: 'gif', description: 'Get random gif from top reddit /r/gifs' },
       { command: 'greet [username]', description: 'Greet someone' },
-      { command: 'google [query]', description: 'Get link to Google query' },
-      { command: 'hashtag [hashtag]', description: 'First Twitter result of the hashtag' },
-      { command: 'help', description: "List of bot's commands" },
       { command: 'mdn [query]', description: 'Search on Mozilla Developer Network' },
+      { command: 'google [query]', description: 'Get link to Google query' },
+      { command: 'help', description: 'List of bot\'s commands' },
       { command: 'roulette', description: '1 chance out of 6 to die' }
     ]
     json_status 200, list
